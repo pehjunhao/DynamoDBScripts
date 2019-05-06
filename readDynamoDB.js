@@ -13,7 +13,7 @@ fs.readFile('lxsTransactionId.csv', 'utf8', (err, data) => {
 	for(let i in dataList) {
 		if (!uniqueMap[dataList[i]] && dataList[i]) {
 			keys.push({
-		  		"LEXS_TRANSACTION_ID": dataList[i],
+		  		"<TABLE_NAME>": dataList[i],
 		  	});
 		  	uniqueMap[dataList[i]] = true;
 		}
@@ -29,12 +29,7 @@ fs.readFile('lxsTransactionId.csv', 'utf8', (err, data) => {
 		        "LEXS_SHIPMENTS": {
 		            Keys: keys.slice(j, upperIndex),
 		            AttributesToGet: [
-				        'CARRIER_TRACKING_ID',
-				        'CARRIER_ID',
-				        'CANCELLED_CARRIER_ID',
-				        'REFUND_STATE',
-				        'REFUND_STATE_UPDATED_DATE'
-				        /* more items */
+		            	// Add attributes to reduce transmitted data
 			      	],
 		        }
 		    }
@@ -44,16 +39,9 @@ fs.readFile('lxsTransactionId.csv', 'utf8', (err, data) => {
 		  	if (err) {
 		  		console.log(err, err.stack);
 		  	} else {
-		  		let response = data.Responses.LEXS_SHIPMENTS;
+		  		let response = data.Responses.<TABLE_NAME>;
 		  		for (let i=0; i<response.length; i++) {
-		  			let data = response[i];
-					if (data.CARRIER_ID === "USPS" && 
-						data.CANCELLED_CARRIER_ID == null && 
-						data.REFUND_STATE == 'REFUND_PENDING') {
-
-						fs.appendFile('output.csv',data.CARRIER_TRACKING_ID+","+ data.REFUND_STATE_UPDATED_DATE+ '\n', function(){});
-						counter++;
-					}
+		  			// Do whatever you want here
 		  		}
 				console.log(counter);
 		  	}
@@ -62,7 +50,6 @@ fs.readFile('lxsTransactionId.csv', 'utf8', (err, data) => {
 		j+= 100;
 
     } while(j<keys.length);
-    // } while(false);
 	
 });
 
