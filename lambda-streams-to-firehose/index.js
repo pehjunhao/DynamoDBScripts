@@ -92,7 +92,7 @@ const NORTH_VIRGINIA = "us-east-1";
 const IRELAND = "eu-west-1";
 const OREGON = "us-west-2";
 
-let mappingKey  = 'arn:aws:firehose:'+IRELAND+':334584704285:deliverystream/' + TABLE_NAME;
+let mappingKey  = 'arn:aws:firehose:'+NORTH_VIRGINIA+':334584704285:deliverystream/' + TABLE_NAME;
 
 var deliveryStreamMapping = {
     mappingKey: TABLE_NAME
@@ -164,19 +164,13 @@ exports.init = init;
 function createDynamoDataItem(record) {
     var output = {};
 
-    if (record.dynamodb.NewImage)
-        output.NewImage = record.dynamodb.NewImage;
-    if (record.dynamodb.OldImage)
-        output.OldImage = record.dynamodb.OldImage;
+    let entry = record.dynamodb.OldImage;
+    const keys = Object.keys(entry);
 
-    // add the sequence number and other metadata
-    output.SequenceNumber = record.dynamodb.SequenceNumber;
-    output.SizeBytes = record.dynamodb.SizeBytes;
-    output.ApproximateCreationDateTime = record.dynamodb.ApproximateCreationDateTime;
-    output.eventName = record.eventName;
-    // adding userIdentity, used by DynamoDB TTL to indicate removal by TTL as
-    // opposed to user initiated remove
-    output.userIdentity = record.userIdentity;
+    for (let i=0; i<keys.length; i++) {
+    	let key = keys[i];
+    	output[key] = entry[key].S || (entry[key].N || entry[key].L);
+    }
 
     return output;
 }
@@ -471,7 +465,7 @@ function processEvent(event, serviceName, streamName, callback) {
         } else {
         	// Only record in s3 if type is ttl
         	if (record.userIdentity && record.userIdentity.type == "Service" && record.userIdentity.principalId == "dynamodb.amazonaws.com") {
-	            recordCallback(null, record.dynamodb.OldImage);
+	            recordCallback(null, createDynamoDataItem(record));
         	}
         }
     }, function (err, extractedUserRecords) {
